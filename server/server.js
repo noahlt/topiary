@@ -29,7 +29,14 @@ var SESSION = new Session(); // a singleton for now
 */
 PLAYERS = [];
 addPlayer = function(name, letter) {
-  PLAYERS.push({name: name, letter: letter});
+  var p = {id: PLAYERS.length, name: name, letter: letter};
+  PLAYERS.push(p);
+  return p;
+}
+removePlayer = function(playerID) {
+  var i = PLAYERS.findIndex((p) => p.id === playerID);
+  PLAYERS = PLAYERS.slice(0, i).concat(PLAYERS.slice(i+1));
+  return PLAYERS;
 }
 var CONNECTIONS = [];
 
@@ -46,31 +53,50 @@ WSS.on('connection', (ws) => {
   console.log('added a new ws connection');
   broadcastClients('playerList', {playerList: PLAYERS});
 
-  // ws.onmessage = (event) => {
-  //   var data = JSON.parse(event.data);
-  //   console.log('received mesg while connecting', data);
-  //   if (data.type === 'newPlayer') {
-  //     console.log('new player requests to join');
-  //     if (data.name.length > 0 && data.letter.length === 1) {
-  //       console.log('new player is valid');
-  //       players.push({name: data.name, letter: data.letter, conn: ws});
-  //       ws.send(JSON.stringify({
-  //         type: 'playerAdded',
-  //         letter: data.letter,
-  //         name: data.name,
-  //       }));
-  //       broadcastClients('playerList', {playerList: players.map(
-  //         (p) => selectKeys(p, ['name', 'letter']))});
-  //     } else {
-  //       ws.send(JSON.stringify({
-  //         type: 'playerRejected',
-  //       }));
-  //     }
-  //   } if (data.type === 'requestPlayerList') {
-  //   } else {
-  //     console.log('received other message:', data.type);
-  //   }
-  // }
+  var playerID = -1;
+
+  var disconnect = () => {
+    var i = CONNECTIONS.indexOf(ws);
+    CONNECTIONS.splice(i, 1);
+    if (playerID === -1) {
+      // player never identified.  There's a timeout (below) to automatically
+      // disconnect unidentified connections.  Anything to do with connections
+      // should happen above this clause, anything to do with identified
+      // players should happen after this clause.
+      return;
+    }
+    removePlayer(playerID);
+    broadcastClients('playerList', {playerList: PLAYERS});
+  }
+
+  ws.on('error', (error) => {
+    if (error.errno === 'ECONNRESET') {
+      console.log('connection reset: ', playerID);
+      disconnect();
+    }
+  });
+
+  ws.on('close', (code, reason) => {
+    disconnect();
+  });
+
+  setTimeout(() => {
+    if (playerID === -1) {
+      ws.close();
+    }
+  }, 1500); // is 15 seconds a reasonable timeout??
+
+  ws.on('message', (message) => {
+    try {
+      var data = JSON.parse(message);
+    } catch (e) {
+      console.log('bad message sent!', typeof event, event);
+      return;
+    }
+    if (data.type === 'identify') {
+      playerID = data.playerID;
+    }
+  });
 });
 
 function broadcastClients(mesgType, data) {
@@ -90,12 +116,8 @@ app.post('/api/connect', function(req, res) {
     res.sendStatus(400);
     return;
   }
-  addPlayer(req.body.name, req.body.letter);
-  res.send(JSON.stringify({
-    message:"welcome to the game!",
-    name: req.body.name,
-    letter: req.body.letter,
-  }));
+  var p = addPlayer(req.body.name, req.body.letter);
+  res.send(JSON.stringify(p));
 });
 
 app.use('/static', express.static('../client/static'));

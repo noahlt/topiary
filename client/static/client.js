@@ -49,9 +49,9 @@ function modeConnect(name, letter) {
     headers: new Headers({'Content-Type': 'application/json'}),
   }).then((response) => {
     return response.json();
-  }).then((data) => {
-    console.log('api/connect response:', data);
-    modePlay();
+  }).then((player) => {
+    console.log('api/connect response:', player);
+    modePlay(player.id);
   }).catch((error) => {
     console.error('error!', error);
   });
@@ -69,7 +69,7 @@ function modePlay(playerID) {
         renderPlaying(data.playerList);
       }
     }
-    WS.send(JSON.stringify({type: 'requestPlayerList'}));
+    WS.send(JSON.stringify({type: 'identify', playerID: playerID}));
   }
 }
 
