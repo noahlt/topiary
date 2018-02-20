@@ -1,0 +1,16 @@
+{
+  "name": "topiary_server",
+  "version": "0.0.1",
+  "description": "Server for Topiary: table-top role-playing augmentation.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Matt Belland <mattbelland@gmail.com>, Noah Tye <hi@noahtye.com>",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.16.2",
+    "ip": "^1.1.5"
+  }
+}
