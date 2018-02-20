@@ -10,7 +10,9 @@
   "author": "Matt Belland <mattbelland@gmail.com>, Noah Tye <hi@noahtye.com>",
   "license": "UNLICENSED",
   "dependencies": {
+    "body-parser": "^1.18.2",
     "express": "^4.16.2",
-    "ip": "^1.1.5"
+    "ip": "^1.1.5",
+    "ws": "^4.0.0"
   }
 }
